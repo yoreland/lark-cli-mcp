@@ -20,9 +20,9 @@ import { fileURLToPath } from "node:url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // Default scopes for a Feishu messaging workshop (user identity).
-// `im` domain covers send/read/reply; `contact` for user search;
-// `search` for cross-chat message search.
-const DEFAULT_DOMAINS = "im,contact,search";
+// `im` domain covers send/read/reply/search; `contact` for user search.
+// NOTE: there is no `search` domain in lark-cli; message search lives under `im`.
+const DEFAULT_DOMAINS = "im,contact";
 
 function resolveLarkCli() {
   if (process.env.LARK_CLI_BIN && existsSync(process.env.LARK_CLI_BIN)) {

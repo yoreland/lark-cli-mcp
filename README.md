@@ -87,7 +87,7 @@ The workshop host creates **one** Feishu custom app and configures it so attende
 
 1. [Feishu Open Platform](https://open.feishu.cn) → create an internal custom app → note **App ID / App Secret**.
 2. Enable **User token scopes** matching the `im`, `contact`, `search` domains (message read/write, reply, chat read, user search, message search).
-3. Distribute the App ID/Secret to attendees via `lark-cli config` (or a pre-bound config). The login step requests scopes via `--domain im,contact,search`.
+3. Distribute the App ID/Secret to attendees via `lark-cli config` (or a pre-bound config). The login step requests scopes via `--domain im,contact`.
 
 `auth` uses **OAuth Device Flow**, so no `redirect URL` / `localhost:3000` callback configuration is required.
 
@@ -97,7 +97,7 @@ The workshop host creates **one** Feishu custom app and configures it so attende
 
 **`missing required scope(s)`** — re-login with the needed domain:
 ```bash
-npx -y @yoreland/lark-cli-mcp auth --domain im,contact,search
+npx -y @yoreland/lark-cli-mcp auth --domain im,contact
 ```
 
 **Client shows "No tools loaded"** — run `npx -y @yoreland/lark-cli-mcp doctor`; confirm Node ≥18 and that `auth status` is OK.
