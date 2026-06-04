@@ -2,31 +2,60 @@
 
 > One-line `npx` MCP server that lets AI clients (Amazon Quick Desktop, Claude Desktop, …) operate **Feishu / Lark as your own user identity** — send, read, reply, and search messages.
 
-It wraps the official [`lark-cli`](https://github.com/larksuite/cli) (bundled as a dependency, no separate install) and exposes 7 messaging tools over MCP stdio. Because every call runs with `--as user`, the sender shown in Feishu is **you**, not a bot.
+It wraps the official [`lark-cli`](https://github.com/larksuite/cli) (bundled as a dependency, no separate install) and exposes **19 tools** over MCP stdio — messaging, cloud docs, Wiki, Drive, and Bitable. Because every call runs with `--as user`, the sender/creator shown in Feishu is **you**, not a bot.
 
 ---
 
 ## Quick start (for workshop attendees)
 
+### 1) One-time login (in a terminal)
+
 ```bash
-# 1) Log in once (OAuth device flow — opens a URL / shows a QR code)
+# Bind the shared Feishu app (scan the QR code)
+npx -y @yoreland/lark-cli-mcp -- config init --new
+
+# OAuth device-flow login as yourself
 npx -y @yoreland/lark-cli-mcp auth
 
-# 2) Sanity check
+# Sanity check (should report logged-in)
 npx -y @yoreland/lark-cli-mcp doctor
 ```
 
-Then add the MCP server in your client:
+### 2) Add the MCP server in Amazon Quick Desktop
 
-| Field        | Value                          |
-| ------------ | ------------------------------ |
-| Connection   | Local (stdio)                  |
-| Command      | `npx`                          |
-| Arguments    | `-y @yoreland/lark-cli-mcp`    |
+Go to **Settings → Capabilities → MCP → + Add MCP**:
 
-You should see **7 tools · Connected** ✅
+![Quick Desktop — MCP list / Add MCP](docs/images/quick-mcp-list.jpg)
 
-> Quick Desktop tip: arguments are space-split. `-y @yoreland/lark-cli-mcp` is fine (no spaces inside the package name).
+In the dialog, use **Paste JSON config** and paste:
+
+```json
+{
+  "command": "npx",
+  "args": ["-y", "@yoreland/lark-cli-mcp"]
+}
+```
+
+![Quick Desktop — Paste JSON config](docs/images/quick-mcp-paste-json.jpg)
+
+Click **Apply** → **Save**. The server should show **19 tools · Connected** ✅
+
+> Manual form instead of JSON? Connection type = `Local`, Command = `npx`, Arguments = `-y @yoreland/lark-cli-mcp`. Arguments are space-split (no spaces inside the package name, so this is safe).
+
+### 3) (Recommended) Add the skill
+
+**Settings → Capabilities → Skills → Upload**, then select [`skill/feishu-lark/SKILL.md`](skill/feishu-lark/SKILL.md). Toggle it **Active**.
+
+![Quick Desktop — upload skill](docs/images/quick-skill-upload.jpg)
+
+The skill teaches Quick *when* and *how* to use the 19 tools (resolve chat_id/open_id first, confirm before sending, Bitable field handling, etc.) — the MCP provides the tools, the skill makes Quick use them well.
+
+### 4) Try it
+
+- "看看 XX 群最近聊了什么"
+- "帮我找一下某人"
+- "搜一下我的飞书文档里有没有 …"
+- "列一下这个多维表格 \<URL\> 的记录"
 
 ---
 
