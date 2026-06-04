@@ -1,0 +1,43 @@
+{
+  "name": "@yoreland/lark-cli-mcp",
+  "version": "1.0.0",
+  "description": "MCP server that wraps lark-cli to operate Feishu/Lark as your own user identity (send/read/reply/search messages). Designed for one-line npx launch.",
+  "type": "module",
+  "bin": {
+    "lark-cli-mcp": "./bin/cli.mjs"
+  },
+  "main": "./server.mjs",
+  "files": [
+    "server.mjs",
+    "bin/cli.mjs",
+    "README.md"
+  ],
+  "scripts": {
+    "start": "node server.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "feishu",
+    "lark",
+    "lark-cli",
+    "larksuite"
+  ],
+  "author": "yoreland",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yoreland/lark-cli-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yoreland/lark-cli-mcp/issues"
+  },
+  "homepage": "https://github.com/yoreland/lark-cli-mcp#readme",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@larksuite/cli": "^1.0.47"
+  }
+}
