@@ -1,6 +1,6 @@
 {
   "name": "@yoreland/lark-cli-mcp",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "MCP server that wraps lark-cli to operate Feishu/Lark as your own user identity (send/read/reply/search messages). Designed for one-line npx launch.",
   "type": "module",
   "bin": {
