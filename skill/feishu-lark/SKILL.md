@@ -1,82 +1,103 @@
 ---
 name: feishu-lark
-description: Operate Feishu/Lark as the logged-in user by running the lark-cli command-line tool directly in a shell — send, read, reply to, and search messages, find group chats and users, and view threads. No MCP server required; uses the shell/bash tool to invoke lark-cli. Use whenever the user wants to (1) send a Feishu/Lark message to a person or group, (2) read recent messages in a chat, (3) reply to a message (optionally in-thread), (4) search messages by keyword, (5) find a group chat's chat_id, (6) look up a user's open_id by name/email, or (7) view a message thread. Triggers include phrasing like "在飞书群里说…", "看看 XX 群最近聊了什么", "回复那条消息", "搜一下谁提过…", "帮我找一下某人", "send a Lark message", "check the group chat". All actions run as the real user (not a bot).
+description: Operate Feishu/Lark as the logged-in user via the @yoreland/lark-cli-mcp MCP server — messaging (send/read/reply/search), people & chat lookup, cloud documents (search/read/create/update), Drive & Wiki, and Bitable (multi-dimensional tables). Use whenever the user wants to (1) send/read/reply/search Feishu messages, (2) find a group's chat_id or a user's open_id, (3) view a message thread, (4) search/read/create/update Feishu docs, (5) search Drive files or browse Wiki nodes, or (6) list/search/create/update Bitable records. Triggers include "在飞书群里说…", "看看 XX 群最近聊了什么", "回复那条消息", "搜一下谁提过…", "帮我找一下某人", "搜一下我的飞书文档", "读一下这篇文档", "列一下这个多维表格的记录", "send a Lark message", "search Feishu docs", "update a Bitable record". All actions run as the real user (not a bot).
 ---
 
-# Feishu / Lark via lark-cli (user identity)
+# Feishu / Lark (user identity)
 
-Operate Feishu/Lark messaging by running the `lark-cli` CLI directly through the shell tool. Every command uses `--as user`, so the sender shown in Feishu is the logged-in human, not a bot. Output is JSON (parse it to extract ids, sender names, text).
+Drive the `@yoreland/lark-cli-mcp` MCP server to operate Feishu/Lark as the logged-in human user (sender/creator shown in Feishu is the user, not a bot). All tools return JSON — parse it to extract ids, titles, and content.
 
-## Setup check (run once if commands fail)
+## Prerequisites (one-time)
 
-`lark-cli` must be installed and logged in on this machine. If a command returns `not configured` or auth errors, instruct the user to run these interactive steps in a terminal (do NOT run login on their behalf — it is personal/interactive):
+MCP server registered in the client and the user logged in:
 
-```bash
-npx -y @yoreland/lark-cli-mcp -- config init --new   # scan QR to bind the Feishu app
-npx -y @yoreland/lark-cli-mcp auth                    # OAuth device-flow login
-```
+- MCP config — Command `npx`, Arguments `-y @yoreland/lark-cli-mcp`
+- Terminal setup:
+  - `npx -y @yoreland/lark-cli-mcp -- config init --new` (scan QR to bind the Feishu app)
+  - `npx -y @yoreland/lark-cli-mcp auth` (OAuth device-flow login; requests domains im,contact,docs,wiki,drive,base)
 
-If `lark-cli` is on PATH (global install), commands below can use `lark-cli` directly. Otherwise prefix with the npx passthrough form: `npx -y @yoreland/lark-cli-mcp -- <args>`. Prefer plain `lark-cli` when available.
+If tools are missing or calls fail with auth errors, tell the user to run those commands and reconnect. Login is interactive/personal — never do it on their behalf.
 
-## Command cheatsheet
+## Tools
 
-All commands add `--as user`. ID conventions: chat = `oc_xxx`, user open_id = `ou_xxx`, message = `om_xxx`, thread = `om_/omt_xxx`. Time args are ISO 8601 (e.g. `2026-06-04T00:00:00+08:00`).
+### Messaging (IM)
 
-| Goal | Command |
-| --- | --- |
-| Send to group | `lark-cli im +messages-send --as user --chat-id oc_xxx --text "..."` |
-| Send DM | `lark-cli im +messages-send --as user --user-id ou_xxx --text "..."` |
-| Send markdown | `lark-cli im +messages-send --as user --chat-id oc_xxx --markdown "..."` |
-| Read chat | `lark-cli im +chat-messages-list --as user --chat-id oc_xxx --page-size 20` |
-| Read DM history | `lark-cli im +chat-messages-list --as user --user-id ou_xxx --page-size 20` |
-| Reply | `lark-cli im +messages-reply --as user --message-id om_xxx --text "..."` |
-| Reply in thread | add `--reply-in-thread` to the reply command |
-| Search messages | `lark-cli im +messages-search --as user --query "关键词"` |
-| Find group → chat_id | `lark-cli im +chat-search --as user --query "群名"` |
-| Find user → open_id | `lark-cli contact +search-user --as user --query "姓名或邮箱"` |
-| View thread | `lark-cli im +threads-messages-list --as user --thread om_xxx` |
+| Tool | Use for | Required args |
+| --- | --- | --- |
+| `feishu_send_message` | Send a message | `text` or `markdown`; plus `chat_id` OR `user_id` |
+| `feishu_get_messages` | Read recent messages | `chat_id` OR `user_id` |
+| `feishu_reply_message` | Reply to a message | `message_id`, `text` (opt `in_thread`) |
+| `feishu_search_messages` | Search messages | `keyword` |
+| `feishu_list_chats` | Find a group → `chat_id` | (opt `keyword`) |
+| `feishu_search_user` | Find a user → `open_id` | `query` (name/email) |
+| `feishu_get_thread` | View a thread | `message_id` |
 
-Flag notes:
-- `--chat-id` and `--user-id` are mutually exclusive (pick one).
-- `+chat-messages-list` page-size max is 50; sort with `--sort asc|desc`; time range `--start`/`--end` (ISO 8601).
-- `+messages-search` time range `--start`/`--end` (ISO 8601 with tz); scope with `--chat-id`, `--sender`.
-- `+messages-send`/`+messages-reply` need one of `--text` / `--markdown`.
+### Docs / Wiki / Drive
+
+| Tool | Use for | Required args |
+| --- | --- | --- |
+| `feishu_search_docs` | Search docs/wiki/sheets | `query` |
+| `feishu_doc_fetch` | Read a document | `doc` (URL or token) |
+| `feishu_doc_create` | Create a doc (markdown) | `title` (opt `markdown`, `folder_token`) |
+| `feishu_doc_update` | Update a doc | `doc`, `markdown` (opt `mode`, `new_title`) |
+| `feishu_drive_search` | Search Drive files | (opt `query`, `doc_types`, `mine`) |
+| `feishu_wiki_node_list` | List wiki nodes | `space_id` (opt `parent_node_token`) |
+| `feishu_wiki_node_get` | Get a wiki node | `node_token` (accepts a Lark URL) |
+
+### Bitable (multi-dimensional tables)
+
+| Tool | Use for | Required args |
+| --- | --- | --- |
+| `feishu_base_table_list` | List tables in a base | `base_token` |
+| `feishu_base_field_list` | List a table's fields | `base_token`, `table_id` |
+| `feishu_base_record_list` | List records | `base_token`, `table_id` (opt `limit`,`filter_json`,`sort_json`) |
+| `feishu_base_record_search` | Search records | `base_token`, `table_id` (opt `limit`) |
+| `feishu_base_record_upsert` | Create/update a record | `base_token`, `table_id`, `fields_json` (opt `record_id`) |
+
+ID conventions: chat `oc_xxx`, user open_id `ou_xxx`, message `om_xxx` (thread `omt_xxx`), doc token from URL `/docx/<token>`, base app_token from URL `/base/<token>`, table `tbl_xxx`.
 
 ## Core workflows
 
-### Send to a group given only its name
-1. `lark-cli im +chat-search --as user --query "<group name>"` → parse JSON, pick the `chat_id` of the match.
-2. If several chats match, list them and ask the user which one.
-3. `lark-cli im +messages-send --as user --chat-id <oc_...> --text "<message>"`.
+### Send to a group by name
+1. `feishu_list_chats` (`keyword`) → pick the matching `chat_id`; if several match, ask which.
+2. `feishu_send_message` with that `chat_id` + `text`/`markdown`.
 
-### Send a DM given a person's name
-1. `lark-cli contact +search-user --as user --query "<name or email>"` → get `open_id` (`ou_...`).
-2. `lark-cli im +messages-send --as user --user-id <ou_...> --text "<message>"`.
+### Send a DM to a person
+1. `feishu_search_user` (`query`) → `open_id`.
+2. `feishu_send_message` with `user_id`.
 
 ### Read / summarize a chat
-1. Resolve `chat_id` via `+chat-search` if only a name is given.
-2. `lark-cli im +chat-messages-list --as user --chat-id <oc_...> --page-size 20`.
-3. Parse JSON and summarize; attribute messages to sender names.
+Resolve `chat_id` if only a name is given → `feishu_get_messages` (`count` ~20, raise for more) → summarize with sender names.
 
 ### Reply to a message
-Obtain the `message_id` (`om_...`) — reuse the id from a prior read if the user says "that message". Add `--reply-in-thread` for thread replies.
+Use the `message_id` (`om_...`) from a prior read. `in_thread: true` for thread replies.
 
-### Search
-`lark-cli im +messages-search --as user --query "<keyword>"`; narrow with `--chat-id`, `--sender`, `--start`/`--end`.
+### Work with a document
+- Search: `feishu_search_docs` (`query`) → get the doc token/URL.
+- Read: `feishu_doc_fetch` (`doc` = URL or token).
+- Create: `feishu_doc_create` (`title`, `markdown`).
+- Update: `feishu_doc_update` (`doc`, `markdown`, `mode`); default `mode` is `append`. Use `overwrite`/`replace_all` to replace, `insert_before`/`insert_after` for positional edits.
+
+### Work with a Bitable
+The user usually pastes a Base URL. Extract `app_token` (`/base/<token>`) for `base_token`, and `table` query param for `table_id`.
+1. `feishu_base_table_list` to discover tables; `feishu_base_field_list` to learn columns.
+2. Read: `feishu_base_record_list` / `feishu_base_record_search`.
+3. Write: `feishu_base_record_upsert` with `fields_json` = `{"FieldName":"value",...}` (no `fields` wrapper). Omit `record_id` to create; include it to update that row.
 
 ## Rules & safety
 
-- **Sending runs as the real user — it is a real outbound message.** Before sending to any person or group, confirm the resolved target (show the chat/user name and id) and the exact message text, unless the user already gave an explicit, unambiguous send instruction.
-- Never invent a `chat_id` or `open_id`. Always resolve via `+chat-search` / `+search-user` first, and verify the match.
-- Quote arguments to handle spaces/CJK. Pass message text as a single `--text`/`--markdown` argument.
-- Use `--markdown` for formatted messages, `--text` for plain.
-- Attachments (image/file) and interactive cards are out of scope for these flows.
+- **Sending messages and creating/updating docs or records run as the real user — real outbound effects.** Before sending a message or writing data, confirm the resolved target (show name + id) and the exact content, unless the user already gave an explicit, unambiguous instruction.
+- Never invent a `chat_id` / `open_id` / `base_token` / `table_id`. Resolve via the search/list tools first and verify the match.
+- For Bitable writes, prefer reading fields first (`feishu_base_field_list`) so `fields_json` keys match real column names.
+- Use `markdown` for formatted messages/docs; `text` for plain messages.
+- Attachments and interactive message cards are out of scope.
 
 ## Troubleshooting
 
-- `missing required scope(s)` → re-login requesting needed scopes:
-  `npx -y @yoreland/lark-cli-mcp auth --domain im,contact`
-  or a specific scope, e.g. send-as-user: `npx -y @yoreland/lark-cli-mcp auth --scope "im:message:send_as_user"`
-- `not configured` / `not_configured` → `npx -y @yoreland/lark-cli-mcp -- config init --new`.
-- Token expired / auth errors → re-run `npx -y @yoreland/lark-cli-mcp auth`.
-- `command not found: lark-cli` → use the npx passthrough form `npx -y @yoreland/lark-cli-mcp -- <args>`, or install globally: `npm i -g @larksuite/cli`.
+- `missing required scope(s)` → re-login with the needed domains:
+  `npx -y @yoreland/lark-cli-mcp auth --domain im,contact,docs,wiki,drive,base`
+  or a specific scope, e.g.: `npx -y @yoreland/lark-cli-mcp auth --scope "im:message:send_as_user"`.
+  Also ensure those permissions are enabled (and the app version published) in the Feishu Open Platform console.
+- `not configured` → `npx -y @yoreland/lark-cli-mcp -- config init --new`.
+- Token expired → re-run `npx -y @yoreland/lark-cli-mcp auth`.
+- Tools missing → verify MCP args `-y @yoreland/lark-cli-mcp`; run `npx -y @yoreland/lark-cli-mcp doctor`.
